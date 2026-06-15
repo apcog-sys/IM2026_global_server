@@ -1,0 +1,10 @@
+{
+  "database": {
+    "type": "mysql",
+    "host": "mysql-service",
+    "port": 3306,
+    "username": "root",
+    "password": "root",
+    "database": "gs1"
+  }
+}

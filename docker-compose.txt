@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  # MySQL Database Service
+  mysql_db:
+    image: mysql:8.0
+    container_name: gs1_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: gs1
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - "3306:3306"
+    volumes:
+      # Mount schema file to initialize database
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      # Persist database data
+      - mysql_data:/var/lib/mysql
+    networks:
+      - gs1_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      timeout: 20s
+      retries: 10
+      interval: 10s
+
+  # FastAPI Application Service (Global Server)
+  gs1_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gs1_app
+    environment:
+      MYSQL_HOST: mysql_db
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_DATABASE: gs1
+    ports:
+      - "9000:9000"
+    volumes:
+      - .:/app
+    depends_on:
+      mysql_db:
+        condition: service_healthy
+    networks:
+      - gs1_network
+    command: >
+      sh -c "
+      sleep 15 &&
+      python -c 'import json; json.dump({"database": {"host": "mysql_db", "port": 3306, "username": "root", "password": "root", "database": "gs1"}}, open("config.json", "w"))' &&
+      uvicorn gs1:app --host 0.0.0.0 --port 9000
+      "
+
+  # CA Service (Certificate Authority)
+  ca_service:
+    build:
+      context: .
+      dockerfile: CA_management/Dockerfile
+    container_name: ca_service
+    environment:
+      MYSQL_HOST: mysql_db
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      PYTHONPATH: /app
+    ports:
+      - "9002:9002"
+    volumes:
+      - .:/app
+      - ca_pki_data:/app/CA_management/pki
+    depends_on:
+      mysql_db:
+        condition: service_healthy
+    networks:
+      - gs1_network
+    command: >
+      sh -c "
+      sleep 15 &&
+      python -m uvicorn CA_management.ca_service:app --host 0.0.0.0 --port 9002
+      "
+
+networks:
+  gs1_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
+  ca_pki_data:
+    driver: local
+    driver: local

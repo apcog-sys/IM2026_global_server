@@ -1,0 +1,29 @@
+# ==================== GS1 Global Server Library Requirements ====================
+# FastAPI Web Framework
+fastapi==0.104.1
+uvicorn==0.24.0
+
+# Data Validation & Serialization
+pydantic==2.5.0
+
+# Database Connector
+mysql-connector-python==8.2.0
+
+# HTTP Requests
+requests==2.31.0
+
+# Standard Library (built-in, no installation needed)
+# - datetime
+# - os
+# - json
+# - typing
+
+# ==================== Installation Instructions ====================
+# Run: pip install -r gs_lib_requirement.txt
+#
+# Or install individually:
+# pip install fastapi==0.104.1
+# pip install uvicorn==0.24.0
+# pip install pydantic==2.5.0
+# pip install mysql-connector-python==8.2.0
+# pip install requests==2.31.0
