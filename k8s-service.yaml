@@ -2,14 +2,13 @@ apiVersion: v1
 kind: Service
 metadata:
   name: information-mediator-gs-svc
-  labels:
-    app: information-mediator-gs
+  namespace: default
 spec:
-  type: LoadBalancer
   selector:
-    app: information-mediator-gs
+    app: information-mediator-gs   # matches the pod template label in your deployment
   ports:
-    - name: http
-      protocol: TCP
-      port: 80
-      targetPort: 9000
+  - name: http
+    port: 80
+    targetPort: 9000               # your container's containerPort
+    protocol: TCP
+  type: ClusterIP
