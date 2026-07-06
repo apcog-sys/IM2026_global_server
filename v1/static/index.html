@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IM · Global Server</title>
+<style>
+  :root{--bg:#0f172a;--panel:#1e293b;--accent:#a78bfa;--muted:#94a3b8}
+  *{box-sizing:border-box}body{margin:0;font-family:Segoe UI,system-ui,sans-serif;background:var(--bg);color:#e2e8f0}
+  header{background:#2e1065;padding:16px 28px;border-bottom:3px solid var(--accent)}
+  header h1{margin:0;font-size:20px}header span{color:var(--muted);font-size:13px}
+  .tabs{display:flex;flex-wrap:wrap;gap:4px;background:#0b1220;padding:8px 28px;border-bottom:1px solid #334155}
+  .tabbtn{background:#1e293b;color:#cbd5e1;border:0;padding:8px 14px;border-radius:8px 8px 0 0;cursor:pointer;font-size:13px}
+  .tabbtn.active{background:var(--accent);color:#2e1065;font-weight:700}
+  main{max-width:1200px;margin:0 auto;padding:24px}
+  .panel{display:none}.panel.show{display:block}
+  .card{background:var(--panel);border-radius:10px;padding:18px;margin-bottom:18px;box-shadow:0 1px 3px #0006}
+  h2{font-size:15px;margin:0 0 12px;color:var(--accent)}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #334155}th{color:var(--muted)}
+  .tag{padding:2px 8px;border-radius:10px;font-size:11px}.approved{background:#14532d;color:#86efac}.pending{background:#451a03;color:#fcd34d}
+  label{display:block;font-size:12px;color:var(--muted);margin:8px 0 3px}
+  input,textarea{width:100%;background:#0b1220;border:1px solid #334155;color:#e2e8f0;padding:7px 10px;border-radius:6px;font-family:inherit}
+  .row{display:flex;gap:10px;flex-wrap:wrap}.row>div{flex:1;min-width:130px}
+  button{background:var(--accent);color:#2e1065;border:0;padding:8px 14px;border-radius:6px;cursor:pointer;font-weight:600;margin-top:10px}
+  button.sm{padding:3px 8px;font-size:11px;margin:1px}button.red{background:#7f1d1d;color:#fecaca}button.blue{background:#1d4ed8;color:#dbeafe}
+  pre{background:#0b1220;padding:12px;border-radius:8px;overflow:auto;font-size:11px;color:#c4b5fd;max-height:320px}
+  code{color:#7dd3fc}
+  #out{position:fixed;right:18px;bottom:18px;max-width:420px;background:#0b1220;border:1px solid #334155;border-radius:8px;padding:10px 14px;font-size:12px;color:#c4b5fd;display:none}
+</style>
+</head>
+<body>
+<header><h1>🌐 Global Server — Central Registry</h1><span>port 9000 · entities · gateways · catalog · subscriptions · signed global config</span></header>
+<div class="tabs" id="tabs"></div>
+<main>
+  <!-- TRUST -->
+  <section class="panel show" id="t-trust">
+    <div class="card"><h2>Trust anchors (CA + TSA)</h2>
+      <button onclick="act('/api/setup-trust','POST')">Auto-register CA + TSA (fetch &amp; register)</button>
+      <table style="margin-top:12px"><thead><tr><th>Type</th><th>Name</th><th>URL</th><th></th></tr></thead><tbody id="trust"></tbody></table>
+    </div>
+    <div class="card"><h2>Register a trusted CA / TSA manually</h2>
+      <div class="row"><div><label>type</label><select id="tr_type" style="width:100%;background:#0b1220;border:1px solid #334155;color:#e2e8f0;padding:7px;border-radius:6px"><option value="trusted-ca">CA</option><option value="trusted-tsa">TSA</option></select></div>
+        <div><label>name</label><input id="tr_name"></div><div><label>url</label><input id="tr_url"></div></div>
+      <label>cert PEM</label><textarea id="tr_cert" rows="4"></textarea>
+      <button onclick="addTrust()">Register</button>
+    </div>
+  </section>
+
+  <!-- ENTITIES -->
+  <section class="panel" id="t-entities">
+    <div class="card"><h2>Register an entity</h2>
+      <div class="row"><div><label>entity class</label><input id="e_ec" value="GOV"></div>
+        <div><label>entity code</label><input id="e_code" value="1001"></div>
+        <div><label>name</label><input id="e_name" value="Ministry of Digital Affairs"></div></div>
+      <button onclick="addEntity()">Create entity</button>
+    </div>
+    <div class="card"><h2>Entities</h2><table><thead><tr><th>Entity</th><th>Name</th><th></th></tr></thead><tbody id="entities"></tbody></table></div>
+  </section>
+
+  <!-- APPLICATIONS -->
+  <section class="panel" id="t-apps">
+    <div class="card"><h2>Register an application</h2>
+      <div class="row"><div><label>entity class</label><input id="ap_ec" value="GOV"></div>
+        <div><label>entity code</label><input id="ap_code" value="1001"></div>
+        <div><label>application code</label><input id="ap_app" value="consumer-app"></div></div>
+      <button onclick="addApplication()">Create application</button>
+    </div>
+    <div class="card"><h2>Applications</h2><table><thead><tr><th>Entity</th><th>Application</th><th></th></tr></thead><tbody id="apps"></tbody></table></div>
+    <div class="card"><h2>Register a hosted application (on a gateway)</h2>
+      <div class="row"><div><label>gateway code</label><input id="ga_gw" value="SG1"></div>
+        <div><label>entity class</label><input id="ga_ec" value="GOV"></div>
+        <div><label>entity code</label><input id="ga_code" value="1001"></div>
+        <div><label>application code</label><input id="ga_app" value="consumer-app"></div></div>
+      <button onclick="addHosted()">Create hosting</button>
+      <table style="margin-top:12px"><thead><tr><th>Gateway</th><th>Application</th><th>Status</th><th></th></tr></thead><tbody id="gapps"></tbody></table>
+    </div>
+  </section>
+
+  <!-- GATEWAYS -->
+  <section class="panel" id="t-gateways"><div class="card"><h2>Security gateways</h2>
+    <p style="color:var(--muted);font-size:12px">Gateways self-register (they send their auth cert). Approve / edit / delete here.</p>
+    <table><thead><tr><th>Gateway</th><th>Owner</th><th>Address</th><th>Status</th><th>Actions</th></tr></thead><tbody id="gateways"></tbody></table>
+  </div></section>
+
+  <!-- SERVICES -->
+  <section class="panel" id="t-services">
+    <div class="card"><h2>Register a service in the catalog</h2>
+      <div class="row"><div><label>service id</label><input id="sv_id" value="GOVSTACK/GOV/2001/registry/getPerson"></div>
+        <div><label>gateway code</label><input id="sv_gw" value="SG2"></div></div>
+      <label>description</label><input id="sv_desc" value="Look up a person by national id">
+      <button onclick="addService()">Add to catalog</button>
+    </div>
+    <div class="card"><h2>📚 Global service catalog</h2><table><thead><tr><th>Service id</th><th>Gateway</th><th>Description</th><th></th></tr></thead><tbody id="services"></tbody></table></div>
+  </section>
+
+  <!-- SUBSCRIPTIONS -->
+  <section class="panel" id="t-subs">
+    <div class="card"><h2>Register a subscription</h2>
+      <div class="row"><div><label>subscriber (consumer app id)</label><input id="su_sub" value="GOVSTACK/GOV/1001/consumer-app"></div>
+        <div><label>service id</label><input id="su_svc" value="GOVSTACK/GOV/2001/registry/getPerson"></div>
+        <div><label>status</label><input id="su_st" value="approved"></div></div>
+      <button onclick="addSub()">Create subscription</button>
+    </div>
+    <div class="card"><h2>🔔 Subscriptions</h2><table><thead><tr><th>Subscriber</th><th>Service</th><th>Status</th><th></th></tr></thead><tbody id="subs"></tbody></table></div>
+  </section>
+
+  <!-- GLOBAL CONFIG -->
+  <section class="panel" id="t-conf"><div class="card"><h2>Signed global configuration</h2>
+    <label style="display:inline"><input type="checkbox" id="cascade"> cascade delete (applies to entity/gateway/application deletes)</label><br>
+    <button onclick="loadConf()">Load signed global config</button>
+    <pre id="conf">click load…</pre>
+  </div></section>
+</main>
+<div id="out"></div>
+<script>
+const enc=encodeURIComponent;
+const TABS=[['t-trust','Trust'],['t-entities','Entities'],['t-apps','Applications'],['t-gateways','Gateways'],['t-services','Services'],['t-subs','Subscriptions'],['t-conf','Global Config']];
+document.getElementById('tabs').innerHTML=TABS.map((t,i)=>`<button class="tabbtn${i==0?' active':''}" data-tab="${t[0]}" onclick="tab('${t[0]}')">${t[1]}</button>`).join('');
+function tab(id){ document.querySelectorAll('.panel').forEach(p=>p.classList.remove('show')); document.getElementById(id).classList.add('show');
+  document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active')); document.querySelector(`[data-tab="${id}"]`).classList.add('active'); }
+function val(id){return document.getElementById(id).value.trim();}
+function toast(o){const e=document.getElementById('out');e.style.display='block';e.textContent=typeof o=='string'?o:JSON.stringify(o);setTimeout(()=>e.style.display='none',4000);}
+async function api(url,method='GET',body){const r=await fetch(url,{method,headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});try{return await r.json()}catch{return{status:r.status}}}
+async function act(url,method,body){toast(await api(url,method,body));load();}
+function casc(){return document.getElementById('cascade').checked?'?cascade=true':'';}
+async function del(url){if(!confirm('Delete this record?'))return;toast(await api(url,'DELETE'));load();}
+async function delC(url){const c=document.getElementById('cascade').checked;if(!confirm('Delete'+(c?' WITH cascade':'')+'?'))return;toast(await api(url+casc(),'DELETE'));load();}
+function db(url){return `<button class="sm red" onclick="del('${url}')">Delete</button>`;}
+function dbc(url){return `<button class="sm red" onclick="delC('${url}')">Delete</button>`;}
+function eb(url,field,cur){return `<button class="sm blue" onclick="edit('${url}','${field}',${JSON.stringify(cur||'')})">Edit</button>`;}
+async function edit(url,field,cur){const v=prompt(field+':',cur||'');if(v===null)return;const b={};b[field]=v;toast(await api(url,'PUT',b));load();}
+
+async function addTrust(){toast(await api('/api/'+val('tr_type'),'POST',{name:val('tr_name'),url:val('tr_url'),cert_pem:document.getElementById('tr_cert').value}));load();}
+async function addEntity(){toast(await api('/api/entities','POST',{entity_class:val('e_ec'),entity_code:val('e_code'),name:val('e_name')}));load();}
+async function addApplication(){toast(await api('/api/applications','POST',{entity_class:val('ap_ec'),entity_code:val('ap_code'),application_code:val('ap_app')}));load();}
+async function addHosted(){toast(await api('/api/gateway-applications','POST',{gateway_code:val('ga_gw'),entity_class:val('ga_ec'),entity_code:val('ga_code'),application_code:val('ga_app')}));load();}
+async function addService(){toast(await api('/api/services','POST',{service_id:val('sv_id'),gateway_code:val('sv_gw'),description:val('sv_desc')}));load();}
+async function addSub(){toast(await api('/api/subscriptions','POST',{subscriber:val('su_sub'),service_id:val('su_svc'),status:val('su_st')}));load();}
+
+async function load(){
+  const r=await api('/api/registry');
+  document.getElementById('trust').innerHTML=r.trusted_cas.map(c=>`<tr><td>CA</td><td>${c.name}</td><td>${c.url||''}</td><td>${db(`/api/trusted-ca/${enc(c.name)}`)}</td></tr>`).join('')
+    + r.trusted_tsas.map(t=>`<tr><td>TSA</td><td>${t.name}</td><td>${t.url||''}</td><td>${db(`/api/trusted-tsa/${enc(t.name)}`)}</td></tr>`).join('') || '<tr><td colspan=4>none</td></tr>';
+  document.getElementById('entities').innerHTML=r.entities.map(e=>{const[c,code]=e.entity.split('/');
+    return `<tr><td>${e.entity}</td><td>${e.name||''}</td><td>${eb(`/api/entities/${c}/${code}`,'name',e.name)} ${dbc(`/api/entities/${c}/${code}`)}</td></tr>`;}).join('')||'<tr><td colspan=3>none</td></tr>';
+  document.getElementById('apps').innerHTML=r.applications.map(a=>{const[c,code]=a.entity.split('/');
+    return `<tr><td>${a.entity}</td><td>${a.application}</td><td>${dbc(`/api/applications/${c}/${code}/${a.application}`)}</td></tr>`;}).join('')||'<tr><td colspan=3>none</td></tr>';
+  document.getElementById('gapps').innerHTML=r.gateway_applications.map(a=>{const p=a.application.split('/');
+    return `<tr><td>${a.gateway_code}</td><td><code>${a.application}</code></td><td><span class="tag ${a.status}">${a.status}</span></td><td>${db(`/api/gateway-applications/${a.gateway_code}/${p[1]}/${p[2]}/${p[3]}`)}</td></tr>`;}).join('')||'<tr><td colspan=4>none</td></tr>';
+  document.getElementById('gateways').innerHTML=r.security_gateways.map(g=>`<tr><td>${g.gateway_code}</td><td>${g.owner}</td><td>${g.address}</td><td><span class="tag ${g.status}">${g.status}</span></td>
+    <td>${g.status!=='approved'?`<button class="sm" onclick="act('/api/gateways/${g.gateway_code}/approve','POST')">Approve</button> `:''}${eb(`/api/gateways/${g.gateway_code}`,'address',g.address)} ${dbc(`/api/gateways/${g.gateway_code}`)}</td></tr>`).join('')||'<tr><td colspan=5>none</td></tr>';
+  document.getElementById('services').innerHTML=r.services.map(s=>`<tr><td><code>${s.service_id}</code></td><td>${s.gateway_code}</td><td>${s.description||''}</td>
+    <td>${eb(`/api/services?service_id=${enc(s.service_id)}`,'description',s.description)} ${db(`/api/services?service_id=${enc(s.service_id)}`)}</td></tr>`).join('')||'<tr><td colspan=4>none</td></tr>';
+  document.getElementById('subs').innerHTML=r.subscriptions.map(s=>`<tr><td><code>${s.subscriber}</code></td><td><code>${s.service_id}</code></td><td><span class="tag ${s.status}">${s.status}</span></td>
+    <td>${db(`/api/subscriptions?subscriber=${enc(s.subscriber)}&service_id=${enc(s.service_id)}`)}</td></tr>`).join('')||'<tr><td colspan=4>none</td></tr>';
+}
+async function loadConf(){const c=await api('/api/globalconf');document.getElementById('conf').textContent=JSON.stringify(c.conf,null,2)+'\n\n--- signature (truncated) ---\n'+(c.signature||'').slice(0,80)+'…';}
+load(); setInterval(load,5000);
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "_comment": "Global Server config. Precedence: env var (in [brackets]) > this file > default. The Global Server gets its config-signing cert from the CA and reads the TSA cert for trust setup, so it needs the CA + TSA URLs; 'instance' is embedded in the signed global configuration.",
+
+  "general": {
+    "instance": "GOVSTACK"
+  },
+
+  "database": {
+    "host": "localhost",
+    "port": 3306,
+    "user": "root",
+    "password": "root"
+  },
+
+  "servers": {
+    "ca_url": "http://127.0.0.1:9001",
+    "tsa_url": "http://127.0.0.1:9002"
+  },
+
+  "global_server": {
+    "db_name": "global_registry_db"
+  }
+}
