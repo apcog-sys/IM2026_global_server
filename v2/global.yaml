@@ -9,7 +9,7 @@ metadata:
   name: global-config
 data:
   IM_INSTANCE: "GOVSTACK"
-  IM_DB_HOST: "mysql"
+  IM_DB_HOST: "mysql-service"
   IM_DB_PORT: "3306"
   IM_DB_USER: "root"
   IM_DB_PASS: "root"
