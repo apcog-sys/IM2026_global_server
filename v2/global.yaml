@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
         - name: global
-          image: im-global-server:latest
+          image: msahique/global_server_2026:v2
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef: { name: global-config }
@@ -43,7 +43,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: global
+  name: information-mediator-gs-svc
 spec:
   selector: { app: global }
   ports: [{ port: 9000, targetPort: 9000 }]

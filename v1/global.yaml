@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
         - name: global
-          image: msahique/global_server_2026:v2
+          image: im-global-server:latest 
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef: { name: global-config }
