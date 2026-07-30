@@ -40,7 +40,7 @@
   <!-- TRUST -->
   <section class="panel show" id="t-trust">
     <div class="card"><h2>Trust anchors (CA + TSA)</h2>
-      <button onclick="act('/api/setup-trust','POST')">Auto-register CA + TSA (fetch &amp; register)</button>
+      <button onclick="act('/im-gs/api/setup-trust','POST')">Auto-register CA + TSA (fetch &amp; register)</button>
       <table style="margin-top:12px"><thead><tr><th>Type</th><th>Name</th><th>URL</th><th></th></tr></thead><tbody id="trust"></tbody></table>
     </div>
     <div class="card"><h2>Register a trusted CA / TSA manually</h2>
@@ -160,7 +160,7 @@ document.addEventListener('click',(ev)=>{
   if(d.act==='del')        del(d.url,b);
   else if(d.act==='delc')  delC(d.url,b);
   else if(d.act==='edit')  edit(d.url,d.field,d.cur,b);
-  else if(d.act==='approvegw') act('/api/gateways/'+d.gw+'/approve','POST',null,b);
+  else if(d.act==='approvegw') act('/im-gs/api/gateways/'+d.gw+'/approve','POST',null,b);
 });
 
 // Fill a <select> from live data, preserving the current choice.
@@ -171,29 +171,29 @@ function fillSelect(id, values, placeholder){const el=document.getElementById(id
 function fillList(id, values){const el=document.getElementById(id);if(!el)return;
   el.innerHTML=(values||[]).map(v=>`<option value="${esc(v)}">`).join('');}
 
-async function addTrust(btn){await busy(btn,async()=>{toast(await api('/api/'+val('tr_type'),'POST',{name:val('tr_name'),url:val('tr_url'),cert_pem:document.getElementById('tr_cert').value}));await load();});}
-async function addEntity(btn){await busy(btn,async()=>{toast(await api('/api/entities','POST',{entity_class:val('e_ec'),entity_code:val('e_code'),name:val('e_name')}));await load();});}
-async function addApplication(btn){await busy(btn,async()=>{toast(await api('/api/applications','POST',{entity_class:val('ap_ec'),entity_code:val('ap_code'),application_code:val('ap_app')}));await load();});}
-async function addHosted(btn){await busy(btn,async()=>{toast(await api('/api/gateway-applications','POST',{gateway_code:val('ga_gw'),entity_class:val('ga_ec'),entity_code:val('ga_code'),application_code:val('ga_app')}));await load();});}
-async function addService(btn){await busy(btn,async()=>{toast(await api('/api/services','POST',{service_id:val('sv_id'),gateway_code:val('sv_gw'),description:val('sv_desc')}));await load();});}
-async function addSub(btn){await busy(btn,async()=>{toast(await api('/api/subscriptions','POST',{subscriber:val('su_sub'),service_id:val('su_svc'),status:val('su_st')}));await load();});}
+async function addTrust(btn){await busy(btn,async()=>{toast(await api('/im-gs/api/'+val('tr_type'),'POST',{name:val('tr_name'),url:val('tr_url'),cert_pem:document.getElementById('tr_cert').value}));await load();});}
+async function addEntity(btn){await busy(btn,async()=>{toast(await api('/im-gs/api/entities','POST',{entity_class:val('e_ec'),entity_code:val('e_code'),name:val('e_name')}));await load();});}
+async function addApplication(btn){await busy(btn,async()=>{toast(await api('/im-gs/api/applications','POST',{entity_class:val('ap_ec'),entity_code:val('ap_code'),application_code:val('ap_app')}));await load();});}
+async function addHosted(btn){await busy(btn,async()=>{toast(await api('/im-gs/api/gateway-applications','POST',{gateway_code:val('ga_gw'),entity_class:val('ga_ec'),entity_code:val('ga_code'),application_code:val('ga_app')}));await load();});}
+async function addService(btn){await busy(btn,async()=>{toast(await api('/im-gs/api/services','POST',{service_id:val('sv_id'),gateway_code:val('sv_gw'),description:val('sv_desc')}));await load();});}
+async function addSub(btn){await busy(btn,async()=>{toast(await api('/im-gs/api/subscriptions','POST',{subscriber:val('su_sub'),service_id:val('su_svc'),status:val('su_st')}));await load();});}
 
 async function load(){
-  const r=await api('/api/registry');
-  document.getElementById('trust').innerHTML=r.trusted_cas.map(c=>`<tr><td>CA</td><td>${c.name}</td><td>${c.url||''}</td><td>${db(`/api/trusted-ca/${enc(c.name)}`)}</td></tr>`).join('')
-    + r.trusted_tsas.map(t=>`<tr><td>TSA</td><td>${t.name}</td><td>${t.url||''}</td><td>${db(`/api/trusted-tsa/${enc(t.name)}`)}</td></tr>`).join('') || '<tr><td colspan=4>none</td></tr>';
+  const r=await api('/im-gs/api/registry');
+  document.getElementById('trust').innerHTML=r.trusted_cas.map(c=>`<tr><td>CA</td><td>${c.name}</td><td>${c.url||''}</td><td>${db(`/im-gs/api/trusted-ca/${enc(c.name)}`)}</td></tr>`).join('')
+    + r.trusted_tsas.map(t=>`<tr><td>TSA</td><td>${t.name}</td><td>${t.url||''}</td><td>${db(`/im-gs/api/trusted-tsa/${enc(t.name)}`)}</td></tr>`).join('') || '<tr><td colspan=4>none</td></tr>';
   document.getElementById('entities').innerHTML=r.entities.map(e=>{const[c,code]=e.entity.split('/');
-    return `<tr><td>${e.entity}</td><td>${e.name||''}</td><td>${eb(`/api/entities/${c}/${code}`,'name',e.name)} ${dbc(`/api/entities/${c}/${code}`)}</td></tr>`;}).join('')||'<tr><td colspan=3>none</td></tr>';
+    return `<tr><td>${e.entity}</td><td>${e.name||''}</td><td>${eb(`/im-gs/api/entities/${c}/${code}`,'name',e.name)} ${dbc(`/im-gs/api/entities/${c}/${code}`)}</td></tr>`;}).join('')||'<tr><td colspan=3>none</td></tr>';
   document.getElementById('apps').innerHTML=r.applications.map(a=>{const[c,code]=a.entity.split('/');
-    return `<tr><td>${a.entity}</td><td>${a.application}</td><td>${dbc(`/api/applications/${c}/${code}/${a.application}`)}</td></tr>`;}).join('')||'<tr><td colspan=3>none</td></tr>';
+    return `<tr><td>${a.entity}</td><td>${a.application}</td><td>${dbc(`/im-gs/api/applications/${c}/${code}/${a.application}`)}</td></tr>`;}).join('')||'<tr><td colspan=3>none</td></tr>';
   document.getElementById('gapps').innerHTML=r.gateway_applications.map(a=>{const p=a.application.split('/');
-    return `<tr><td>${a.gateway_code}</td><td><code>${a.application}</code></td><td><span class="tag ${a.status}">${a.status}</span></td><td>${db(`/api/gateway-applications/${a.gateway_code}/${p[1]}/${p[2]}/${p[3]}`)}</td></tr>`;}).join('')||'<tr><td colspan=4>none</td></tr>';
+    return `<tr><td>${a.gateway_code}</td><td><code>${a.application}</code></td><td><span class="tag ${a.status}">${a.status}</span></td><td>${db(`/im-gs/api/gateway-applications/${a.gateway_code}/${p[1]}/${p[2]}/${p[3]}`)}</td></tr>`;}).join('')||'<tr><td colspan=4>none</td></tr>';
   document.getElementById('gateways').innerHTML=r.security_gateways.map(g=>`<tr><td>${g.gateway_code}</td><td>${g.owner}</td><td>${g.address}</td><td><span class="tag ${g.status}">${g.status}</span></td>
-    <td>${g.status!=='approved'?`<button class="sm" data-act="approvegw" data-gw="${esc(g.gateway_code)}">Approve</button> `:''}${eb(`/api/gateways/${g.gateway_code}`,'address',g.address)} ${dbc(`/api/gateways/${g.gateway_code}`)}</td></tr>`).join('')||'<tr><td colspan=5>none</td></tr>';
+    <td>${g.status!=='approved'?`<button class="sm" data-act="approvegw" data-gw="${esc(g.gateway_code)}">Approve</button> `:''}${eb(`/im-gs/api/gateways/${g.gateway_code}`,'address',g.address)} ${dbc(`/im-gs/api/gateways/${g.gateway_code}`)}</td></tr>`).join('')||'<tr><td colspan=5>none</td></tr>';
   document.getElementById('services').innerHTML=r.services.map(s=>`<tr><td><code>${s.service_id}</code></td><td>${s.gateway_code}</td><td>${s.description||''}</td>
-    <td>${eb(`/api/services?service_id=${enc(s.service_id)}`,'description',s.description)} ${db(`/api/services?service_id=${enc(s.service_id)}`)}</td></tr>`).join('')||'<tr><td colspan=4>none</td></tr>';
+    <td>${eb(`/im-gs/api/services?service_id=${enc(s.service_id)}`,'description',s.description)} ${db(`/im-gs/api/services?service_id=${enc(s.service_id)}`)}</td></tr>`).join('')||'<tr><td colspan=4>none</td></tr>';
   document.getElementById('subs').innerHTML=r.subscriptions.map(s=>`<tr><td><code>${s.subscriber}</code></td><td><code>${s.service_id}</code></td><td><span class="tag ${s.status}">${s.status}</span></td>
-    <td>${db(`/api/subscriptions?subscriber=${enc(s.subscriber)}&service_id=${enc(s.service_id)}`)}</td></tr>`).join('')||'<tr><td colspan=4>none</td></tr>';
+    <td>${db(`/im-gs/api/subscriptions?subscriber=${enc(s.subscriber)}&service_id=${enc(s.service_id)}`)}</td></tr>`).join('')||'<tr><td colspan=4>none</td></tr>';
 
   // ---- populate every picker from live registry data ----
   const gws      = r.security_gateways.map(g=>g.gateway_code);
@@ -209,7 +209,7 @@ async function load(){
   fillList('dl_app',  [...new Set(r.applications.map(a=>a.application))]);
   fillList('dl_svc',  services);
 }
-async function loadConf(){const c=await api('/api/globalconf');document.getElementById('conf').textContent=JSON.stringify(c.conf,null,2)+'\n\n--- signature (truncated) ---\n'+(c.signature||'').slice(0,80)+'…';}
+async function loadConf(){const c=await api('/im-gs/api/globalconf');document.getElementById('conf').textContent=JSON.stringify(c.conf,null,2)+'\n\n--- signature (truncated) ---\n'+(c.signature||'').slice(0,80)+'…';}
 load(); setInterval(load,5000);
 </script>
 </body>
