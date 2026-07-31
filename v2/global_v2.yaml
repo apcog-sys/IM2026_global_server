@@ -28,6 +28,13 @@ spec:
   template:
     metadata: { labels: { app: global } }
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: global
       containers:
         - name: global
           image: msahique/global_server_2026:v3
