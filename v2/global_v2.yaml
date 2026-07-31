@@ -1,0 +1,56 @@
+# Global Server: ConfigMap + Deployment + Service.
+# Gets its config-signing cert from the CA and reads the TSA cert for trust
+# setup, so it needs IM_CA_URL + IM_TSA_URL. IM_INSTANCE is embedded in the
+# signed global configuration.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: global-config
+data:
+  IM_INSTANCE: "GOVSTACK"
+  IM_DB_HOST: "mysql-service-a"
+  IM_DB_PORT: "3306"
+  IM_DB_USER: "root"
+  IM_DB_PASS: "root"
+  IM_CA_URL: "http://ca:9001"
+  IM_TSA_URL: "http://tsa:9002"
+  GLOBAL_DB_NAME: "global_registry_db"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: global
+  labels: { app: global }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: global } }
+  template:
+    metadata: { labels: { app: global } }
+    spec:
+      containers:
+        - name: global
+          image: msahique/global_server_2026:v3
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef: { name: global-config }
+          ports: [{ containerPort: 9000 }]
+          readinessProbe:
+            httpGet: { path: /openapi.json, port: 9000 }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: information-mediator-gs-svc
+spec:
+  selector: { app: global }
+  ports: [{ name: http, port: 9000, targetPort: 9000 }]
