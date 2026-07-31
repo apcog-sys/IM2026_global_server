@@ -1,42 +1,37 @@
-# Global Server: ConfigMap + Deployment + Service.
-# Gets its config-signing cert from the CA and reads the TSA cert for trust
-# setup, so it needs IM_CA_URL + IM_TSA_URL. IM_INSTANCE is embedded in the
-# signed global configuration.
+# CA Server: ConfigMap + Deployment + Service.
+# The CA is the root of trust and calls no other server - it only needs the DB.
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: global-config
+  name: ca-config
 data:
-  IM_INSTANCE: "GOVSTACK"
   IM_DB_HOST: "mysql-service-a"
   IM_DB_PORT: "3306"
   IM_DB_USER: "root"
-  IM_DB_PASS: "root"
-  IM_CA_URL: "http://ca:9001"
-  IM_TSA_URL: "http://tsa:9002"
-  GLOBAL_DB_NAME: "global_registry_db"
+  IM_DB_PASS: "root"          # use a Secret in production
+  CA_DB_NAME: "ca_db"
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: global
-  labels: { app: global }
+  name: ca
+  labels: { app: ca }
 spec:
   replicas: 1
-  selector: { matchLabels: { app: global } }
+  selector: { matchLabels: { app: ca } }
   template:
-    metadata: { labels: { app: global } }
+    metadata: { labels: { app: ca } }
     spec:
       containers:
-        - name: global
-          image: msahique/global_server_2026:v3
+        - name: ca
+          image: msahique/ca_server_2026:v2
           imagePullPolicy: IfNotPresent
           envFrom:
-            - configMapRef: { name: global-config }
-          ports: [{ containerPort: 9000 }]
+            - configMapRef: { name: ca-config }
+          ports: [{ containerPort: 9001 }]
           readinessProbe:
-            httpGet: { path: /openapi.json, port: 9000 }
+            httpGet: { path: /openapi.json, port: 9001 }
             initialDelaySeconds: 5
             periodSeconds: 5
           resources:
@@ -50,7 +45,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: information-mediator-gs-svc
+  name: ca
 spec:
-  selector: { app: global }
-  ports: [{ name: http, port: 9000, targetPort: 9000 }]
+  selector: { app: ca }
+  ports: [{ name: http, port: 9001, targetPort: 9001 }]
